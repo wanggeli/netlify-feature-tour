@@ -1,1 +1,1 @@
-/s3/* https://s3.dataserver.pp.ua/:splat 200
+/rev/:domain/* https://:domain/:splat 200
