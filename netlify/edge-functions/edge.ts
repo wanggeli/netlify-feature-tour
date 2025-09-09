@@ -12,7 +12,7 @@ export default async (req: Request): Promise<Response> => {
 
         try {
             // Construct the URL for the proxied request
-            const proxyTarget = new URL(targetUrl);
+            const proxyTarget = new URL(`https://${targetUrl}`);
 
             // Re-create the request to pass along all original headers and body
             const proxyRequest = new Request(proxyTarget, {
