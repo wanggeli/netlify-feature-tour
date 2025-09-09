@@ -1,44 +1,40 @@
-import { Context } from "@netlify/edge-functions";
+async (req: Request): Promise<Response> => {
+    const url = new URL(req.url);
 
-export default async (request: Request, context: Context) => {
+    // Check if the request path starts with our proxy prefix
+    if (url.pathname.startsWith("/api/edge/")) {
+        const targetUrl = url.pathname.substring("/api/edge/".length);
 
-    var url = request.url;
-    var host = null;
-    var pathname = url.split('/api/edge')[1]
-    if (pathname != "") {
-        host = pathname.split('/')[1];
-        url = `https:/${pathname}`
-    }
-    var headers = {};
-    request.headers.forEach((value, key) => {
-        headers[key] = value;
-    });
-    if (host) {
-        headers['host'] = host;
-        var res = await fetch(url, {
-            method: request.method,
-            mode: request.mode,
-            cache: request.cache,
-            credentials: request.credentials,
-            headers: headers,
-            redirect: request.redirect,
-            referrerPolicy: request.referrerPolicy,
-            body: request.body
-        });
+        // If no target URL is provided, return an error
+        if (!targetUrl) {
+            return new Response("Hello, I'm an Edge Function from netlify.app.", { status: 200 });
+        }
 
-        headers = {};
-        res.headers.forEach((value, key) => {
-            headers[key] = value;
-        });
-        return new Response(res.body, {
-            status: res.status,
-            statusText: res.statusText,
-            headers: headers
-        });
+        try {
+            // Construct the URL for the proxied request
+            const proxyTarget = new URL(targetUrl);
+
+            // Re-create the request to pass along all original headers and body
+            const proxyRequest = new Request(proxyTarget, {
+                method: req.method,
+                headers: req.headers,
+                body: req.body,
+                redirect: 'follow',
+            });
+
+            // Fetch the response from the target URL
+            const response = await fetch(proxyRequest);
+
+            // Return the proxied response
+            return response;
+        } catch (error) {
+            // Handle potential errors like invalid URLs or network issues
+            return new Response(`Proxy error: ${error.message}`, { status: 500 });
+        }
     }
-    else {
-        return new Response(`Hello, I'm now an Edge Function!`);
-    }
+
+    // Handle all other requests that don't match the proxy path
+    return new Response("Hello, I'm an Edge Function from netlify.app.", { status: 200 });
 };
 
 export const config = { path: "/api/edge/*" };
