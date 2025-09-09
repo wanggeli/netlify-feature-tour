@@ -1,4 +1,4 @@
-async (req: Request): Promise<Response> => {
+export default async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
 
     // Check if the request path starts with our proxy prefix
